@@ -12,7 +12,7 @@ source("script/utils.R")
 # not efficient.
 # Setting auto_write = TRUE asks rstan to compile the Stan model
 # to C++ and save as RDS files
-rstan_options(auto_write = TRUE)
+rstan_options(auto_write = TRUE, iter = 5e4)
 
 
 #####################################################################
@@ -22,74 +22,105 @@ rstan_options(auto_write = TRUE)
 #####################################################################
 
 ## Checking Stan options and use default values if not given
-
-## nIter
-## How many iterations to run to fit the model
-# Set default value if NULL
-nIter <- as.integer(snakemake@params[["nIter"]])
-
-## k-fold cross-validation
-numK <- as.integer(snakemake@params[["numK"]])
-
-upm <- read.csv(
-  snakemake@input[['mtx']],
-    row.names = 1
-  )
-
-### The expression matrix is expected to consist only of numbers
-### Check if the expression matrix is numeric and show error message
-### if it is not.
-num_col <- apply(upm, 2, is.numeric)
-if (!all(num_col)) {
-  message(
-    paste0(
-      "The following columns of the expression matrix are not numbers:\n",
-      colnames(upm)[!num_col]
-    )
-  )
-  stop("All columns of the expression matrix must be numbers.")
-}
-
-## Load metadata csv
-metadata <- read.csv(snakemake@input[['meta']], row.names = 1)
-
-## TODO: Compare assigning as individual driver or one driver
-### Set pseudobulk if the column is not already present in the metadata table
-### This corresponds to the driver used in the original code from Davis et al.
-### Internally, driver identity represents another factor other than cell type
-### in the mixture modeling.
-if (!"pseudobulk" %in% colnames(metadata)) {
-  metadata$pseudobulk <- 1
-}
-
-
-## Ensure the metadata table is the same as column names
-## as column names are modified at cryptic times even if check.names = FALSE
-metadata$sample <- make.names(metadata$sample)
-
-### The metadata should describe in order each column of the expression matrix
-### If not, show error message and stop.
-if (!identical(colnames(upm), metadata$sample)) {
-  stop(
-    "The 'sample' column must be the same as the column names of the expression matrix."
-  )
-}
-
-### Make sure all columns in metadata are characters
-if (!is.character(metadata$sample)) {
-  metadata$sample <- as.character(metadata$sample)
-}
-if (!is.character(metadata$cell)) {
-  metadata$cell <- as.character(metadata$cell)
-}
-if (!is.character(metadata$pseudobulk)) {
-  metadata$pseudobulk <- as.character(metadata$pseudobulk)
-}
+#
+# ## nIter
+# ## How many iterations to run to fit the model
+# # Set default value if NULL
+# nIter <- as.integer(snakemake@params[["nIter"]])
+#
+# ## k-fold cross-validation
+# numK <- as.integer(snakemake@params[["numK"]])
+#
+# upm <- read.csv(
+#   snakemake@input[['mtx']],
+#     row.names = 1
+#   )
+#
+# ### The expression matrix is expected to consist only of numbers
+# ### Check if the expression matrix is numeric and show error message
+# ### if it is not.
+# num_col <- apply(upm, 2, is.numeric)
+# if (!all(num_col)) {
+#   message(
+#     paste0(
+#       "The following columns of the expression matrix are not numbers:\n",
+#       colnames(upm)[!num_col]
+#     )
+#   )
+#   stop("All columns of the expression matrix must be numbers.")
+# }
+#
+# ## Load metadata csv
+# metadata <- read.csv(snakemake@input[['meta']], row.names = 1)
+#
+# ## TODO: Compare assigning as individual driver or one driver
+# ### Set pseudobulk if the column is not already present in the metadata table
+# ### This corresponds to the driver used in the original code from Davis et al.
+# ### Internally, driver identity represents another factor other than cell type
+# ### in the mixture modeling.
+# if (!"pseudobulk" %in% colnames(metadata)) {
+#   metadata$pseudobulk <- 1
+# }
+#
+#
+# ## Ensure the metadata table is the same as column names
+# ## as column names are modified at cryptic times even if check.names = FALSE
+# metadata$sample <- make.names(metadata$sample)
+#
+# ### The metadata should describe in order each column of the expression matrix
+# ### If not, show error message and stop.
+# if (!identical(colnames(upm), metadata$sample)) {
+#   stop(
+#     "The 'sample' column must be the same as the column names of the expression matrix."
+#   )
+# }
+#
+# ### Make sure all columns in metadata are characters
+# if (!is.character(metadata$sample)) {
+#   metadata$sample <- as.character(metadata$sample)
+# }
+# if (!is.character(metadata$cell)) {
+#   metadata$cell <- as.character(metadata$cell)
+# }
+# if (!is.character(metadata$pseudobulk)) {
+#   metadata$pseudobulk <- as.character(metadata$pseudobulk)
+# }
 
 #### Define input object to fit original code
+# inDat <- list(
+#   nGenes = nrow(upm),
+#   nCells = length(unique(metadata$cell)),
+#   nSamples = length(unique(metadata$sample)),
+#   nDrivers = length(unique(metadata$pseudobulk)),
+#   O = upm,
+#   logC = upm,
+#   cell = metadata$cell,
+#   driver = metadata$pseudobulk,
+#   sample = colnames(upm)
+# )
+nIter <- 500
+numK <- 10
+t1 <- 500
+t2 <- 500
+upm <- matrix(
+  c(
+    rnbinom(t1, mu = 1, size = 3), rnbinom(t2, mu = 10, size = 3),
+    rnbinom(t1, mu = 0.5, size = 3), rnbinom(t2, mu = 2.5, size = 3),
+    rnbinom(t1, mu = 0.01, size = 3) * 100, rnbinom(t2, mu = 1, size = 3) * 100
+  ), nrow = 3, byrow = TRUE
+)
+row.names(upm) <- paste0("gene", seq(nrow(upm)))
+metadata <- data.frame(
+  sample = seq(t1 + t2),
+  cell = c(rep(1L, t1), rep(2L, t2)),
+  pseudobulk = 1
+)
+
+colnames(upm) <- metadata$sample
+
 inDat <- list(
-  nGenes = nrow(upm),
-  nCells = length(unique(metadata$cell)),
+  nGenes = 1,
+  nCells = ncol(upm),
   nSamples = length(unique(metadata$sample)),
   nDrivers = length(unique(metadata$pseudobulk)),
   O = upm,
@@ -100,21 +131,23 @@ inDat <- list(
 )
 
 ## Setup individual STAN temporary file path for each run
-temp_path <- paste(strsplit(snakemake@output[[1]], "/")[[1]][1:2], collapse = "/")
+# temp_path <- paste(strsplit(snakemake@output[[1]], "/")[[1]][1:2], collapse = "/")
 
-dir.create(temp_path)
+temp_path <- "script/STAN"
+# dir.create(temp_path)
 
-stan_scripts <- list.files("script/STAN/", pattern = "\\.stan$")
-file.copy(
-  paste0("script/STAN/", stan_scripts),
-  temp_path
-)
+# stan_scripts <- list.files("script/STAN/", pattern = "\\.stan$")
+# file.copy(
+#   paste0("script/STAN/", stan_scripts),
+#   temp_path
+# )
+
 
 # Define paths that point to the Stan scripts
-level1.bim.stanFn <- paste0(temp_path, "/level1_ordered.stan")
-level1.bim.cv.stanFn <- paste0(temp_path, "/level1_ordered_CV.stan")
-level1.uni.stanFn <- paste0(temp_path, "/level1_unimodal.stan")
-level1.uni.cv.stanFn <- paste0(temp_path, "/level1_unimodal_CV.stan")
+level1.bim.stanFn <- paste0(temp_path, "/bimodal.stan")
+level1.bim.cv.stanFn <- paste0(temp_path, "/bimodal_CV.stan")
+level1.uni.stanFn <- paste0(temp_path, "/unimodal.stan")
+level1.uni.cv.stanFn <- paste0(temp_path, "/unimodal_CV.stan")
 
 
 ## Extract values to be modeled from the input object
@@ -219,7 +252,19 @@ geneEfit <- lapply(
     # full data fit
     print(paste0("FULL FIT bimodal for ",x,"!"))
     print(paste0("-> USING STAN FILE: ", stanOptions$bim$file))
-    curBimFit <- do.call(stan, stanOptions$bim) ;
+    # curBimFit <- do.call(stan, stanOptions$bim) ;
+    curBimFit <- vb(
+      object = readRDS("script/STAN/bimodal.rds"),
+      data = list(
+        nSamples = nSamples,
+        nCells = nCells,
+        nDrivers = nDrivers,
+        logE = as.numeric(inDat$logC[genes[1],]),
+        cell = as.integer(factor(inDat$cell, levels=unique(inDat$cell))),
+        driver = as.integer(factor(inDat$driver, levels=unique(inDat$driver)))
+      ),
+      tol_rel_obj = 1e-4
+    )
     print("-> extracting FULL FIT bimodal parameters!")
     bimPars <- inferState.getStanFitPars(
       data = stanOptions$bim$data,
@@ -230,7 +275,19 @@ geneEfit <- lapply(
 
     print(paste0("FULL FIT unimodal for ",x,"!"))
     print(paste0("-> USING STAN FILE: ", stanOptions$uni$file))
-    curUniFit <- do.call(stan, stanOptions$uni) ;
+    # curUniFit <- do.call(stan, stanOptions$uni) ;
+    curUniFit <- vb(
+      object = readRDS("script/STAN/unimodal.rds"),
+      data = list(
+        nSamples = nSamples,
+        nCells = nCells,
+        nDrivers = nDrivers,
+        logE = as.numeric(inDat$logC[genes[1],]),
+        cell = as.integer(factor(inDat$cell, levels=unique(inDat$cell))),
+        driver = as.integer(factor(inDat$driver, levels=unique(inDat$driver)))
+      ),
+      tol_rel_obj = 1e-4
+    )
     uniPars <- inferState.getStanFitPars(
       data = stanOptions$uni$data,
       fit  = curUniFit,
@@ -265,10 +322,30 @@ geneEfit <- lapply(
       stanOptions$uni.cv$data <- stanOptions$bim.cv$data
 
       print("calling bim.cv")
-      bimFit.cv <- do.call(stan, stanOptions$bim.cv) ;
+      # bimFit.cv <- do.call(stan, stanOptions$bim.cv) ;
+      bimFit.cv <- vb(
+        readRDS("script/STAN/bimodal_CV.rds"),
+        data = list(
+          logE_h <- as.numeric(logC[x, hList]),
+          logE_t <- as.numeric(logC[x, tList]),
+          nSamples_h <- length(hList),
+          nSamples_t <- length(tList)
+        ),
+        tol_rel_obj = 1e-4
+      )
 
       print("calling uni.cv")
-      uniFit.cv <- do.call(stan, stanOptions$uni.cv) ;
+      # uniFit.cv <- do.call(stan, stanOptions$uni.cv) ;
+      uniFit.cv <- vb(
+        readRDS("script/STAN/unimodal_CV.rds"),
+        data = list(
+          logE_h <- as.numeric(logC[x, hList]),
+          logE_t <- as.numeric(logC[x, tList]),
+          nSamples_h <- length(hList),
+          nSamples_t <- length(tList)
+        ),
+        tol_rel_obj = 1e-4
+      )
 
       print("extracting log lik")
       bim.kll <- extract_log_lik(bimFit.cv,
@@ -325,4 +402,4 @@ curRes <- list(geneEfit = geneEfit,
                 geneList = geneList,
                 inDat = inDat)
 
-saveRDS(curRes, snakemake@output[[1]])
+# saveRDS(curRes, snakemake@output[[1]])

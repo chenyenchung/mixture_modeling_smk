@@ -86,8 +86,8 @@ for (g in seq(nGenes)) {
 
 t.bimGenes <- names(diff_elpd_g)[which(diff_elpd_g > 2 * diff_elpd_se_g)]
 print(paste0("-> n bimodal genes=",length(t.bimGenes)))
-bim.logC <- logC[t.bimGenes,]
-bim.p_on_gc <- p_on_bimodal_gc[t.bimGenes,]
+bim.logC <- logC[t.bimGenes, , drop = FALSE]
+bim.p_on_gc <- p_on_bimodal_gc[t.bimGenes, , drop = FALSE]
 
 coarse.p_on_bimodal_gs <- matrix(nrow = nGenes,
                                   ncol = nSamples,
@@ -214,10 +214,10 @@ final_model <- list(
 )
 
 ## Save model
-saveRDS(
-  final_model,
-  snakemake@output[['model']]
-)
+# saveRDS(
+#   final_model,
+#   snakemake@output[['model']]
+# )
 
 # Part 4. Making the table #
 Modeled_expression = matrix(nrow = length(genes), ncol = nCells + 9)
@@ -227,10 +227,10 @@ colnames(Modeled_expression) = c(unique(inDat$cell),
                                   "diff.elpd.se",
                                   "bimodal.on_level",
                                   "bimodal.off_level",
-                                  "bimodal.sd",
+                                  "bimodal.phi",
                                   "bimodal.pi",
                                   "unimodal.level",
-                                  "unimodal.sd",
+                                  "unimodal.phi",
                                   "exprType"
 )
 
@@ -242,10 +242,10 @@ for (gene in rownames(Modeled_expression)) {
                                   round(final_model$geneEfit[[gene]]$diff.elpd.se, digits = 2),
                                   round(final_model$geneEfit[[gene]]$bimPars$mu_on, digits = 2),
                                   round(final_model$geneEfit[[gene]]$bimPars$mu_off, digits = 2),
-                                  round(final_model$geneEfit[[gene]]$bimPars$sd_on, digits = 2),
+                                  round(final_model$geneEfit[[gene]]$bimPars$phi, digits = 2),
                                   round(final_model$geneEfit[[gene]]$bimPars$pi_on, digits = 2),
                                   round(final_model$geneEfit[[gene]]$uniPars$mu1, digits = 2),
-                                  round(final_model$geneEfit[[gene]]$uniPars$sd1, digits = 2),
+                                  round(final_model$geneEfit[[gene]]$uniPars$phi, digits = 2),
                                   geneEfit[[gene]]$exprType)
   } else {
     #gene is bimodal
@@ -254,14 +254,14 @@ for (gene in rownames(Modeled_expression)) {
                                   round(final_model$geneEfit[[gene]]$diff.elpd.se, digits = 2),
                                   round(final_model$geneEfit[[gene]]$bimPars$mu_on, digits = 2),
                                   round(final_model$geneEfit[[gene]]$bimPars$mu_off, digits = 2),
-                                  round(final_model$geneEfit[[gene]]$bimPars$sd_on, digits = 2),
+                                  round(final_model$geneEfit[[gene]]$bimPars$phi, digits = 2),
                                   round(final_model$geneEfit[[gene]]$bimPars$pi_on, digits = 2),
                                   round(final_model$geneEfit[[gene]]$uniPars$mu1, digits = 2),
-                                  round(final_model$geneEfit[[gene]]$uniPars$sd1, digits = 2),
+                                  round(final_model$geneEfit[[gene]]$uniPars$phi, digits = 2),
                                   geneEfit[[gene]]$exprType)
   }
 }
 
 
-saveRDS(object = Modeled_expression,
-        file = snakemake@output[["prob_mtx"]])
+# saveRDS(object = Modeled_expression,
+        # file = snakemake@output[["prob_mtx"]])

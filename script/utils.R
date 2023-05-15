@@ -82,33 +82,33 @@ inferState.getStanFitPars <- function(data, fit, mode) {
       paste0("pon_gs[",1:data$nSamples,"]"),"50%"]
     curPars$mu_on                     <- stansum["mu_on","50%"]
     curPars$mu_off                    <- stansum["mu_off","50%"]
-    curPars$sd_on                     <- stansum["sd_on","50%"]
-    curPars$sd_off                    <- stansum["sd_off","50%"]
+    curPars$phi                     <- stansum["phi","50%"]
+    # curPars$sd_off                    <- stansum["sd_off","50%"]
     curPars$pi_on                     <- stansum["pi_on","50%"]
 
-    curPars$rhat.p_on_bimodal_gc      <- stansum[
-      paste0("pon_gc[",1:data$nCells,"]"),"Rhat"]
-    curPars$rhat.p_on_bimodal_gd      <- stansum[
-      paste0("pon_gd[",1:data$nDrivers,"]"),"Rhat"]
-    curPars$rhat.p_on_bimodal_gs      <- stansum[
-      paste0("pon_gs[",1:data$nSamples,"]"),"Rhat"]
-    curPars$rhat.mu_on                <- stansum["mu_on","Rhat"]
-    curPars$rhat.mu_off               <- stansum["mu_off","Rhat"]
-    curPars$rhat.sd_on                <- stansum["sd_on","Rhat"]
-    curPars$rhat.sd_off               <- stansum["sd_off","Rhat"]
-    curPars$rhat.pi_on                <- stansum["pi_on","Rhat"]
+    # curPars$rhat.p_on_bimodal_gc      <- stansum[
+    #   paste0("pon_gc[",1:data$nCells,"]"),"Rhat"]
+    # curPars$rhat.p_on_bimodal_gd      <- stansum[
+    #   paste0("pon_gd[",1:data$nDrivers,"]"),"Rhat"]
+    # curPars$rhat.p_on_bimodal_gs      <- stansum[
+    #   paste0("pon_gs[",1:data$nSamples,"]"),"Rhat"]
+    # curPars$rhat.mu_on                <- stansum["mu_on","Rhat"]
+    # curPars$rhat.mu_off               <- stansum["mu_off","Rhat"]
+    # curPars$rhat.phi                <- stansum["phi","Rhat"]
+    # # curPars$rhat.sd_off               <- stansum["sd_off","Rhat"]
+    # curPars$rhat.pi_on                <- stansum["pi_on","Rhat"]
 
-    curPars$neff.p_on_bimodal_gc      <- stansum[
-      paste0("pon_gc[",1:data$nCells,"]"),"n_eff"]
-    curPars$neff.p_on_bimodal_gd      <- stansum[
-      paste0("pon_gd[",1:data$nDrivers,"]"),"n_eff"]
-    curPars$neff.p_on_bimodal_gs      <- stansum[
-      paste0("pon_gs[",1:data$nSamples,"]"),"n_eff"]
-    curPars$neff.mu_on                <- stansum["mu_on","n_eff"]
-    curPars$neff.mu_off               <- stansum["mu_off","n_eff"]
-    curPars$neff.sd_on                <- stansum["sd_on","n_eff"]
-    curPars$neff.sd_off               <- stansum["sd_off","n_eff"]
-    curPars$neff.pi_on                <- stansum["pi_on","n_eff"]
+    # curPars$neff.p_on_bimodal_gc      <- stansum[
+    #   paste0("pon_gc[",1:data$nCells,"]"),"n_eff"]
+    # curPars$neff.p_on_bimodal_gd      <- stansum[
+    #   paste0("pon_gd[",1:data$nDrivers,"]"),"n_eff"]
+    # curPars$neff.p_on_bimodal_gs      <- stansum[
+    #   paste0("pon_gs[",1:data$nSamples,"]"),"n_eff"]
+    # curPars$neff.mu_on                <- stansum["mu_on","n_eff"]
+    # curPars$neff.mu_off               <- stansum["mu_off","n_eff"]
+    # curPars$neff.phi                <- stansum["phi","n_eff"]
+    # # curPars$neff.sd_off               <- stansum["sd_off","n_eff"]
+    # curPars$neff.pi_on                <- stansum["pi_on","n_eff"]
 
   } else if (mode == "unimodal") {
 
@@ -117,17 +117,18 @@ inferState.getStanFitPars <- function(data, fit, mode) {
     print(rownames(stansum))
 
     curPars$mu1       <- stansum["mu1","50%"]
-    curPars$sd1       <- stansum["sd1","50%"]
-    curPars$rhat.mu1  <- stansum["mu1","Rhat"]
-    curPars$rhat.sd1  <- stansum["sd1","Rhat"]
-
-    curPars$neff.mu1  <- stansum["mu1","n_eff"]
-    curPars$neff.sd1  <- stansum["sd1","n_eff"]
+    curPars$phi       <- stansum["phi","50%"]
+    # curPars$rhat.mu1  <- stansum["mu1","Rhat"]
+    # curPars$rhat.phi  <- stansum["phi","Rhat"]
+    #
+    # curPars$neff.mu1  <- stansum["mu1","n_eff"]
+    # curPars$neff.phi  <- stansum["phi","n_eff"]
 
   }
 
   return(curPars)
 }
+
 
 show_help <- function() {
   message("Please provide the following options:")

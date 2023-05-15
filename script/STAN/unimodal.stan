@@ -18,7 +18,7 @@
 data {
 
    int<lower=2> nSamples ;
-   vector [nSamples] logE;
+   int<lower=0> logE[nSamples];
 
 }
 
@@ -27,14 +27,17 @@ parameters {
 
 //   real<lower=-10,upper=17>     mu1 ;
    real<lower=0,upper=14>     mu1 ;
-   real<lower=0.001,upper=3>  sd1 ;
+   real<lower=0.001,upper=3>  phi ;
 
 }
 
 
 model {
 
-   for (s in 1:nSamples) {
-      target += normal_lpdf(logE[s] | mu1, sd1) ; }
+  target += neg_binomial_2_lpmf(logE | mu1, phi) ;
+
+   // for (s in 1:nSamples) {
+   //    target += neg_binomial_2_lpmf(logE[s] | mu1, phi) ; }
+   //    }
 
 }

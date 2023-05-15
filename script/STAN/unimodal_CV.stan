@@ -20,8 +20,8 @@ data {
    int<lower=2> nSamples_t ;
    int<lower=2> nSamples_h ;
 
-   vector [nSamples_t] logE_t;  // observed tx abundance
-   vector [nSamples_h] logE_h;  // observed tx abundance
+   int<lower=0> logE_t[nSamples_t];  // observed tx abundance
+   int<lower=0> logE_h[nSamples_h];  // observed tx abundance
 
 }
 
@@ -32,16 +32,17 @@ parameters {
 // GOAL: assign gene,samples  to on/off components
 //   real<lower=-10,upper=17>     mu1 ;
    real<lower=0,upper=14>     mu1 ;
-   real<lower=0.001,upper=3>  sd1 ;
+   real<lower=0.001,upper=3>  phi ;
 
 }
 
 
 model {
 
-   for (s in 1:nSamples_t) {
-      target += normal_lpdf(logE_t[s] | mu1, sd1) ;
-   }
+   target += neg_binomial_2_lpmf(logE_t | mu1, phi) ;
+   // for (s in 1:nSamples_t) {
+   //    target += neg_binomial_2_lpmf(logE_t[s] | mu1, phi) ;
+   // }
 
 }
 
@@ -52,9 +53,9 @@ generated quantities {
    vector [nSamples_h] log_lik_h ;
 
    for (s in 1:nSamples_t) {
-      log_lik_t[s] = normal_lpdf(logE_t[s] | mu1, sd1) ; }
+      log_lik_t[s] = neg_binomial_2_lpmf(logE_t[s] | mu1, phi) ; }
 
    for (s in 1:nSamples_h) {
-      log_lik_h[s] = normal_lpdf(logE_h[s] | mu1, sd1) ; }
+      log_lik_h[s] = neg_binomial_2_lpmf(logE_h[s] | mu1, phi) ; }
 
 }
